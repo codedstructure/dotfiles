@@ -23,7 +23,7 @@ imap <esc>OF <esc>$a
 cmap <esc>OF <end>
 
 set gfn=Monospace\ 8
-set t_Co=256
+"set t_Co=256
 
 set wildmode=longest,list,full
 set wildmenu
@@ -33,10 +33,12 @@ set nowritebackup
 set noswapfile
 set lines=40
 set columns=80
+:nnoremap <F5> :buffers<CR>:buffer<Space>
 
 set expandtab
 set tabstop=4
 set shiftwidth=4
+set colorcolumn=79
 :map <C-Up> :bn<Return>
 :map <C-Down> :bp<Return>
 filetype plugin indent on
@@ -71,13 +73,30 @@ set numberwidth=4
 set statusline=%F%m%r%h%w\ [TYPE=%Y\ %{&ff}]\ [%l/%L\ (%p%%)]
 
 " various post-write hooks for quality checking
-au BufWritePost *.py !flake8 --ignore=E501 %
+au BufWritePost *.py !flake8 --ignore=E501 --max-complexity=10 %
 au BufWritePost *.js !jshint %
 
-" Pathogen load
-filetype off
+" immediately source .vimrc after writing it
+au! BufWritePost .vimrc source %
 
+" folding support
+set foldmethod=syntax
+set fdn=5
+inoremap <F9> <C-O>za
+nnoremap <F9> za
+onoremap <F9> <C-C>za
+vnoremap <F9> zf
+nnoremap <F10> zR
+nnoremap <F11> zM
+
+"Pathogen
 call pathogen#infect()
 call pathogen#helptags()
-filetype plugin indent on
-syntax on
+
+"solarized support
+" first disable CSApprox
+let g:CSApprox_loaded = 1
+set background=dark
+set t_Co=16
+let g:solarized_termcolors=16
+colorscheme solarized

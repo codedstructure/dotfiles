@@ -51,3 +51,6 @@ function rmake {
   done
   popd > /dev/null
 }
+
+# ttmux to be equivalent of screen -R
+alias ttmux="tmux a -d || tmux"

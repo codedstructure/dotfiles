@@ -1,0 +1,9 @@
+[ui]
+username = Ben Bass <benbass@codedstructure.net>
+ssh = ssh -C
+
+[extensions]
+convert =
+hgsubversion =
+highlight =
+hgk =
