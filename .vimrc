@@ -88,6 +88,7 @@ onoremap <F9> <C-C>za
 vnoremap <F9> zf
 nnoremap <F10> zR
 nnoremap <F11> zM
+set foldlevelstart=20
 
 "Pathogen
 call pathogen#infect()
