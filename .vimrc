@@ -31,8 +31,6 @@ set wildmenu
 set nobackup
 set nowritebackup
 set noswapfile
-set lines=40
-set columns=80
 :nnoremap <F5> :buffers<CR>:buffer<Space>
 
 set expandtab
