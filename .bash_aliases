@@ -1,19 +1,25 @@
 alias svnrev="svn info ${SVN_ROOT} | awk '/Revision:/ {print $2}'"
-alias svndiff="svn diff --diff-cmd svnmeld"
+alias svndiff="svn diff --diff-cmd svnmeld | filterdiff --clean"
 alias svnlog="svn up; svn log --stop-on-copy"
 alias svnlogdiff="svndiff -r \$(svn log --stop-on-copy --xml | xpath -q -e '//log/logentry[last()]/@revision' | cut -d '\"' -f 2):HEAD"
+alias branchdiff="svn diff -r \$(svn log --stop-on-copy --xml | xpath -q -e '//log/logentry[last()]/@revision' | cut -d '\"' -f 2):HEAD | filterdiff --clean"
 alias webserve="python -m SimpleHTTPServer"
+
 # sf - search within files matching given content below PWD
 alias sf="find . ! \( -name .svn -prune \) -a -type f -print0 | xargs -0 grep -Hn --color"
+
 # sfl - list files below current PWD
 alias sfl="find . ! \( -name .svn -prune \) -a -type f"
 
 # sn - search for files matching given name below PWD
 alias sn="find . ! \( -name .svn -prune \) -a -type f -name"
+
 # sfn - search for files matching given content below PWD; display name only
 alias sfn="find . ! \( -name .svn -prune \) -a -type f -print0 | xargs -0 grep -l"
+
 alias http_head="curl -I"
-alias cdtemp='td=$(mktemp -d); pushd $td; bash; popd;'  # TODO: add a trap to remove on exit
+alias cdtemp='td=$(mktemp -d); pushd $td; bash -c "trap \"rm -rf ${td}\" EXIT; bash"; popd;'
+
 alias pp="egrep '^\s*(def|class) '"
 
 
@@ -72,6 +78,11 @@ case $OSTYPE in
         alias open="xdg-open"
 esac
 
+# 'column-number' - filter to extract the relevant column
+function cn {
+  awk "{print \$$1;}"
+}
+
 # rmake - run a 'top-level' make from within a lower directory
 function rmake {
   pushd . > /dev/null
@@ -88,5 +99,17 @@ function rmake {
   popd > /dev/null
 }
 
-# ttmux to be equivalent of screen -R
-alias ttmux="tmux a -d || tmux"
+# tmux setup
+function ttmux {
+    if ! tmux has-session -t dev; then
+        tmux new-session -s dev -d
+        tmux split-window -h -t dev
+        tmux split-window -t dev
+        tmux split-window -t dev
+        tmux split-window -h -p 33 -t dev
+        tmux clock-mode
+        tmux new-window -t dev
+        tmux select-window -t dev:1
+    fi
+    tmux attach -t dev
+}
