@@ -4,14 +4,20 @@
 
 import atexit
 import os
+import sys
 import readline
 import rlcompleter
+
 histfile = os.path.join(os.environ["HOME"], ".pyhist")
 try:
     readline.read_history_file(histfile)
 except IOError:
     pass
-readline.parse_and_bind('tab: complete')
-
 atexit.register(readline.write_history_file, histfile)
-del os, rlcompleter, readline, atexit, histfile
+
+if (sys.platform == 'darwin'):
+    readline.parse_and_bind("bind ^I rl_complete")
+else:
+    readline.parse_and_bind("tab: complete")
+
+del os, sys, rlcompleter, readline, atexit, histfile
