@@ -22,6 +22,8 @@ nmap <esc>OF $
 imap <esc>OF <esc>$a
 cmap <esc>OF <end>
 
+inoremap jj <Esc>
+
 set gfn=Monospace\ 8
 "set t_Co=256
 
@@ -31,11 +33,7 @@ set wildmenu
 set nobackup
 set nowritebackup
 set noswapfile
-<<<<<<< local
-"set lines=40
-"set columns=80
-=======
->>>>>>> other
+
 :nnoremap <F5> :buffers<CR>:buffer<Space>
 
 set expandtab
@@ -76,7 +74,9 @@ set numberwidth=4
 set statusline=%F%m%r%h%w\ [TYPE=%Y\ %{&ff}]\ [%l/%L\ (%p%%)]
 
 " various post-write hooks for quality checking
-au BufWritePost *.py !flake8 --ignore=E501 --max-complexity=10 %
+"au BufWritePost *.py !flake8 --ignore=E501,E121,E122,E123,E124,E125,E126,E127,E128 --max-complexity=10 %
+autocmd BufWritePost *.xml,*.html !xmlwf % | grep -v 'undefined entity'
+autocmd BufWritePost *.py call Flake8()
 au BufWritePost *.js !jshint %
 
 " immediately source .vimrc after writing it
@@ -101,6 +101,32 @@ call pathogen#helptags()
 " first disable CSApprox
 let g:CSApprox_loaded = 1
 set background=dark
-set t_Co=16
-let g:solarized_termcolors=16
+"let g:solarized_termcolors=16
 colorscheme solarized
+
+" vim-flake8 setup
+let g:flake8_ignore="E501,E121,E122,E123,E124,E125,E126,E127,E128"
+
+set display=lastline
+
+function Softwrap()
+  set formatoptions=1
+  set linebreak
+  set wrap
+  set nolist
+  "set breakat=\ |@-+;:,./?^I
+  nnoremap j gj
+  nnoremap k gk
+  vnoremap j gj
+  vnoremap k gk
+  set foldcolumn=7
+  set nonumber
+  set colorcolumn=0
+  set textwidth=0
+  set wrapmargin=0
+endfunction
+
+"au BufRead,BufNewFile *.txt,*.md,*.markdown,*.rst set wrap linebreak nolist textwidth=0 wrapmargin=0 colorcolumn=0
+au BufRead,BufNewFile *.txt,*.md,*.markdown,*.rst call Softwrap()
+
+nnoremap <silent> <F12> :TlistUpdate<CR>:TlistToggle<CR>
