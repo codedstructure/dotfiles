@@ -89,7 +89,7 @@ sfr () {
 
 # map - apply each of params $2..$n to the program given as $1
 # Example usage: 'map sn file1.txt file2.txt file3.txt'
-map () { prog="$1"; shift; for arg in "$@"; do eval "$prog" "$arg"; done }
+map () { prog="$1"; shift; for arg in "$@"; do eval "$prog" '"$arg"'; done }
 
 # mcd - make and change to directory
 # mcd is part of mtools by default (change MSDOS directory)
@@ -98,6 +98,7 @@ mcd () {
 }
 
 sl () {
+ # select line. e.g. '$ seq 10 20 | sl 4' => 13
  sed -n "$1p"
 }
 
