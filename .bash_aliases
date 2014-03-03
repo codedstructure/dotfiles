@@ -5,6 +5,7 @@ alias svnlogdiff="svndiff -r \$(svn log --stop-on-copy --xml | xpath -q -e '//lo
 alias svnlogdifft="svn diff -r \$(svn log --stop-on-copy --xml | xpath -q -e '//log/logentry[last()]/@revision' | cut -d '\"' -f 2):HEAD"
 alias svnlogstat="svn diff -r \$(svn log --stop-on-copy --xml | xpath -q -e '//log/logentry[last()]/@revision' | cut -d '\"' -f 2):HEAD --summarize"
 alias branchdiff="svn diff -r \$(svn log --stop-on-copy --xml | xpath -q -e '//log/logentry[last()]/@revision' | cut -d '\"' -f 2):HEAD | filterdiff --clean"
+alias gitdiff="git difftool -d"
 alias webserve="python -m SimpleHTTPServer"
 
 alias _findnovcs="find . ! \( -name .svn -prune -o -name .git -prune -o -name .hg -prune \) -a"
@@ -90,6 +91,9 @@ sfr () {
 # map - apply each of params $2..$n to the program given as $1
 # Example usage: 'map sn file1.txt file2.txt file3.txt'
 map () { prog="$1"; shift; for arg in "$@"; do eval "$prog" '"$arg"'; done }
+# fold - apply binary operation to first two args, shift, repeat.
+# Example usage: 'echo "hello" > a; fold cp a b c d e f g'
+fold () { prog="$1"; shift; while true; do [[ -z "$2" ]] && break; eval "$prog" '"$1"' '"$2"'; shift; done }
 
 # mcd - make and change to directory
 # mcd is part of mtools by default (change MSDOS directory)
