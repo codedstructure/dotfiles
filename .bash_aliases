@@ -101,6 +101,11 @@ mcd () {
   mkdir -p $1 && cd $1
 }
 
+# sumcol - sum given column of csv input
+sumcol () {
+  awk -F, "{s += \$$1} END {print s}"
+}
+
 sl () {
  # select line. e.g. '$ seq 10 20 | sl 4' => 13
  sed -n "$1p"
