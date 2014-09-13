@@ -22,7 +22,7 @@ alias sn="_findnovcs -type f -name"
 alias sfn="_findnovcs -type f -print0 | xargs -0 grep -Il"
 
 alias http_head="curl -I"
-alias cdtemp='td=$(mktemp -d); pushd $td; bash -c "trap \"rm -rf ${td}\" EXIT; bash"; popd;'
+alias cdtemp='td=$(mktemp -d -t cdtemp.XXXXX); pushd $td; bash -c "trap \"rm -rf ${td}\" EXIT; bash"; popd;'
 
 alias pp="egrep '^\s*(def|class) '"
 
