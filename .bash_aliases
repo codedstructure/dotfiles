@@ -7,6 +7,7 @@ alias svnlogstat="svn diff -r \$(svn log --stop-on-copy --xml | xpath -q -e '//l
 alias branchdiff="svn diff -r \$(svn log --stop-on-copy --xml | xpath -q -e '//log/logentry[last()]/@revision' | cut -d '\"' -f 2):HEAD | filterdiff --clean"
 alias gitdiff="git difftool -d"
 alias webserve="python -m SimpleHTTPServer"
+alias pylab="ipython notebook --pylab inline"
 
 alias _findnovcs="find . ! \( -name .svn -prune -o -name .git -prune -o -name .hg -prune \) -a"
 # sf - search within files matching given content below PWD
@@ -16,10 +17,19 @@ alias sf="_findnovcs -type f -print0 | xargs -0 grep -IHn --color"
 alias sfl="_findnovcs -type f"
 
 # sn - search for files matching given name below PWD
-alias sn="_findnovcs -type f -name"
+# Needs to be a function so can be used in _multiedit
+function sn() {
+  _findnovcs -type f -name "$@"
+}
+
+# snw - search for files matching given 'wholename' below PWD
+alias snw="_findnovcs -type f -wholename"
 
 # sfn - search for files matching given content below PWD; display name only
-alias sfn="_findnovcs -type f -print0 | xargs -0 grep -Il"
+# Needs to be a function so can be used in _multiedit
+function sfn() {
+  _findnovcs -type f -print0 | xargs -0 grep -Il "$@"
+}
 
 alias http_head="curl -I"
 alias cdtemp='td=$(mktemp -d -t cdtemp.XXXXX); pushd $td; bash -c "trap \"rm -rf ${td}\" EXIT; bash"; popd;'
@@ -41,8 +51,10 @@ cdn() {
   fi
 }
 
-# en - launch an editor to edit file(s) matching given name. Analogous to sn.
-en () {
+_multiedit () {
+  PATH_FIND_PROG=$1
+  shift
+
   MY_EDITOR="$VISUAL"
   if [[ -z "$MY_EDITOR" ]] ; then
     MY_EDITOR="$EDITOR"
@@ -50,23 +62,26 @@ en () {
   if [[ -z "$MY_EDITOR" ]] ; then
     MY_EDITOR=/usr/bin/vim
   fi
-  # see http://stackoverflow.com/questions/3852616/xargs-with-command-that-open-editor-leaves-shell-in-weird-state
+
+  PATHS=""
+  while [[ -n $1 ]]; do
+    PATHS="$(${PATH_FIND_PROG} $1)\n$PATHS"
+    shift
+  done
+
   export MY_EDITOR
-  _findnovcs -type f -name $1 | xargs sh -c '${MY_EDITOR} $@ < /dev/tty' "${MY_EDITOR}"
+  # see http://stackoverflow.com/questions/3852616/xargs-with-command-that-open-editor-leaves-shell-in-weird-state
+  echo -e $PATHS | xargs sh -c '${MY_EDITOR} $@ < /dev/tty' "${MY_EDITOR}"
+}
+
+# en - launch an editor to edit file(s) matching given name. Analogous to sn.
+en () {
+  _multiedit sn $@
 }
 
 # efn - launch an editor to edit file(s) matching given content. Analogous to sfn.
 efn () {
-  MY_EDITOR="$VISUAL"
-  if [[ -z "$MY_EDITOR" ]] ; then
-    MY_EDITOR="$EDITOR"
-  fi
-  if [[ -z "$MY_EDITOR" ]] ; then
-    MY_EDITOR=/usr/bin/vim
-  fi
-  # see http://stackoverflow.com/questions/3852616/xargs-with-command-that-open-editor-leaves-shell-in-weird-state
-  export MY_EDITOR
-  _findnovcs -type f -print0 | xargs -0 grep -Il "$1" | xargs sh -c '${MY_EDITOR} $@ < /dev/tty' "${MY_EDITOR}"
+ _multiedit sfn $@
 }
 
 sfr () {
@@ -159,3 +174,11 @@ function ttmux {
     fi
     tmux attach -t dev
 }
+
+function mkblank {
+    dd if=/dev/zero of=blank.dd count=$1 bs=1M
+}
+
+if [[ -e ${HOME}/.bash_aliases_work ]] ; then
+    . ${HOME}/.bash_aliases_work
+fi
