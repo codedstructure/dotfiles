@@ -9,6 +9,13 @@ alias gitdiff="git difftool -d"
 alias webserve="python -m SimpleHTTPServer"
 alias pylab="ipython notebook --pylab inline"
 
+# gitdiffbase - show changes since most likely 'branch point'
+function gitdiffbase() {
+    DEFAULT=master
+    from=${1-$DEFAULT}
+    gitdiff $(git merge-base $from HEAD)
+}
+
 alias _findnovcs="find . ! \( -name .svn -prune -o -name .git -prune -o -name .hg -prune \) -a"
 # sf - search within files matching given content below PWD
 alias sf="_findnovcs -type f -print0 | xargs -0 grep -IHn --color"
@@ -52,7 +59,7 @@ cdn() {
 }
 
 _multiedit () {
-  PATH_FIND_PROG=$1
+  PATH_FIND_PROG="$1"
   shift
 
   MY_EDITOR="$VISUAL"
@@ -64,8 +71,9 @@ _multiedit () {
   fi
 
   PATHS=""
-  while [[ -n $1 ]]; do
-    PATHS="$(${PATH_FIND_PROG} $1)\n$PATHS"
+  while [[ -n "$1" ]]; do
+    # Note quoting here needs to be only of $1
+    PATHS=$(${PATH_FIND_PROG} "$1")\\n${PATHS}
     shift
   done
 
@@ -76,12 +84,12 @@ _multiedit () {
 
 # en - launch an editor to edit file(s) matching given name. Analogous to sn.
 en () {
-  _multiedit sn $@
+  _multiedit sn "$@"
 }
 
 # efn - launch an editor to edit file(s) matching given content. Analogous to sfn.
 efn () {
- _multiedit sfn $@
+ _multiedit sfn "$@"
 }
 
 sfr () {
