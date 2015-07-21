@@ -6,6 +6,7 @@ alias svnlogdifft="svn diff -r \$(svn log --stop-on-copy --xml | xpath -q -e '//
 alias svnlogstat="svn diff -r \$(svn log --stop-on-copy --xml | xpath -q -e '//log/logentry[last()]/@revision' | cut -d '\"' -f 2):HEAD --summarize"
 alias branchdiff="svn diff -r \$(svn log --stop-on-copy --xml | xpath -q -e '//log/logentry[last()]/@revision' | cut -d '\"' -f 2):HEAD | filterdiff --clean"
 alias gitdiff="git difftool -d"
+alias gum="(git checkout master ; git pull ; git checkout -)"
 alias webserve="python -m SimpleHTTPServer"
 alias pylab="ipython notebook --pylab inline"
 
@@ -29,6 +30,12 @@ function sn() {
   _findnovcs -type f -name "$@"
 }
 
+# sd - search for directories matching given name below PWD
+# Needs to be a function so can be used in _multiedit
+function sd() {
+  _findnovcs -type d -name "$@"
+}
+
 # snw - search for files matching given 'wholename' below PWD
 alias snw="_findnovcs -type f -wholename"
 
@@ -42,6 +49,13 @@ alias http_head="curl -I"
 alias cdtemp='td=$(mktemp -d -t cdtemp.XXXXX); pushd $td; bash -c "trap \"rm -rf ${td}\" EXIT; bash"; popd;'
 
 alias pp="egrep '^\s*(def|class) '"
+
+alias zen="python -c 'import this'"
+
+# Output all symbolic links below this point
+rlinks() {
+  find -type l -print0 -exec bash -c 'echo " -> $(readlink {})"' \; | tr '\0' ' '
+}
 
 cdn() {
   local TARGET="$1"
@@ -79,7 +93,7 @@ _multiedit () {
 
   export MY_EDITOR
   # see http://stackoverflow.com/questions/3852616/xargs-with-command-that-open-editor-leaves-shell-in-weird-state
-  echo -e $PATHS | xargs sh -c '${MY_EDITOR} $@ < /dev/tty' "${MY_EDITOR}"
+  echo -e $PATHS | xargs -r sh -c '${MY_EDITOR} $@ < /dev/tty' "${MY_EDITOR}"
 }
 
 # en - launch an editor to edit file(s) matching given name. Analogous to sn.
@@ -92,7 +106,20 @@ efn () {
  _multiedit sfn "$@"
 }
 
-sfr () {
+_sfr () {
+  local SED_OPTS="-i~"
+  if [[ $1 == "nobackup" ]] ; then
+
+    if [[ $(uname) == 'Linux' ]] ; then
+       # GNU sed requires -i without any 'extension'
+       SED_OPTS="-i"
+    elif [[ $(uname) == 'Darwin' ]] ; then
+       # BSD sed requires an empty argument
+       SED_OPTS="-i ''"
+    fi
+
+    shift
+  fi
   if [[ $# != 2 ]] ; then
     echo "Usage: sfr [old] [new]"
     return 1
@@ -107,16 +134,26 @@ sfr () {
      return 1
   fi
   for FILE in $(_findnovcs -type f -print0 | xargs -0 grep -Il "$1") ; do
-    sed -i~ -e "s${DELIM}$1${DELIM}$2${DELIM}g" "$FILE"
+    sed ${SED_OPTS} -e "s${DELIM}$1${DELIM}$2${DELIM}g" "$FILE"
   done
 }
 
+sfr () {
+   _sfr "$1" "$2"
+}
+
+sfrn () {
+   _sfr nobackup "$1" "$2"
+}
+
 # map - apply each of params $2..$n to the program given as $1
-# Example usage: 'map sn file1.txt file2.txt file3.txt'
+# Example usage: 'map open file1.txt file2.txt file3.txt'
 map () { prog="$1"; shift; for arg in "$@"; do eval "$prog" '"$arg"'; done }
 # fold - apply binary operation to first two args, shift, repeat.
 # Example usage: 'echo "hello" > a; fold cp a b c d e f g'
 fold () { prog="$1"; shift; while true; do [[ -z "$2" ]] && break; eval "$prog" '"$1"' '"$2"'; shift; done }
+# Do the specified actions $1 times sequentially
+repeat () { count="$1"; shift; for _ in $(seq $count); do eval "$@" ; done }
 
 # mcd - make and change to directory
 # mcd is part of mtools by default (change MSDOS directory)
@@ -129,8 +166,8 @@ sumcol () {
   awk -F, "{s += \$$1} END {print s}"
 }
 
+# sl - select line. e.g. '$ seq 10 20 | sl 4' => 13
 sl () {
- # select line. e.g. '$ seq 10 20 | sl 4' => 13
  sed -n "$1p"
 }
 
