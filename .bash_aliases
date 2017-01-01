@@ -17,9 +17,17 @@ function gitdiffbase() {
     gitdiff $(git merge-base $from HEAD)
 }
 
+if [[ $(uname -s) == "Darwin" ]] ; then
+    # on Darwin (OS X) xargs always behaves as GNU xargs '-r' argument,
+    # and doesn't support the -r flag.
+    alias _xargs=xargs
+else
+    alias _xargs="xargs -r"
+fi
+
 alias _findnovcs="find . ! \( -name .idea -prune -o -name .svn -prune -o -name .git -prune -o -name .hg -prune \) -a"
 # sf - search within files matching given content below PWD
-alias sf="_findnovcs -type f -print0 | xargs -0 grep -IHn --color"
+alias sf="_findnovcs -type f -print0 | _xargs -0 grep -IHn --color"
 
 # sfl - list files below current PWD
 alias sfl="_findnovcs -type f"
@@ -43,7 +51,7 @@ function sd() {
 # sfn - search for files matching given content below PWD; display name only
 # Needs to be a function so can be used in _findedit
 function sfn() {
-  _findnovcs -type f -print0 | xargs -0 grep -Il "$@"
+  _findnovcs -type f -print0 | _xargs -0 grep -Il "$@"
 }
 
 alias http_head="curl -I"
@@ -98,7 +106,7 @@ _multiedit () {
 
   export MY_EDITOR
   # see http://stackoverflow.com/questions/3852616/xargs-with-command-that-open-editor-leaves-shell-in-weird-state
-  echo -e "$@" | xargs -r sh -c '${MY_EDITOR} $@ < /dev/tty' "${MY_EDITOR}"
+  echo -e "$@" | _xargs sh -c '${MY_EDITOR} $@ < /dev/tty' "${MY_EDITOR}"
 }
 
 # en - launch an editor to edit file(s) matching given name. Analogous to sn.
@@ -152,7 +160,7 @@ _sfr () {
      echo "Old string contains delimiters"
      return 1
   fi
-  for FILE in $(_findnovcs -type f -print0 | xargs -0 grep -Il "$1") ; do
+  for FILE in $(_findnovcs -type f -print0 | _xargs -0 grep -Il "$1") ; do
     sed ${SED_OPTS} -e "s${DELIM}$1${DELIM}$2${DELIM}g" "$FILE"
   done
 }
@@ -194,6 +202,15 @@ if [[ $(uname) = 'Darwin' ]] ; then
     alias gvim=mvim
     alias vim='mvim -v'
     alias aplay="sox -r 8000 -b 8 -c 1 -t raw -e unsigned-integer - -d"
+
+    ia() {
+       for FILE in "$@"; do
+          if [ ! -e "$FILE" ]; then
+            touch "$FILE"
+          fi
+       done
+       open -a "iA Writer" "$@"
+    }
 fi
 
 # http://superuser.com/questions/38984/linux-equivalent-command-for-open-command-on-mac-windows
