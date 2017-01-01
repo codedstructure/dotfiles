@@ -6,9 +6,9 @@ alias svnlogdifft="svn diff -r \$(svn log --stop-on-copy --xml | xpath -q -e '//
 alias svnlogstat="svn diff -r \$(svn log --stop-on-copy --xml | xpath -q -e '//log/logentry[last()]/@revision' | cut -d '\"' -f 2):HEAD --summarize"
 alias branchdiff="svn diff -r \$(svn log --stop-on-copy --xml | xpath -q -e '//log/logentry[last()]/@revision' | cut -d '\"' -f 2):HEAD | filterdiff --clean"
 alias gitdiff="git difftool -d"
-alias gum="(git checkout master ; git pull ; git checkout -)"
+alias gitdiffsumm="git diff --summary \$(git merge-base master HEAD)"
+alias gum="(git checkout master ; git pull --all --prune ; git checkout -)"
 alias webserve="python -m SimpleHTTPServer"
-alias pylab="ipython notebook --pylab inline"
 
 # gitdiffbase - show changes since most likely 'branch point'
 function gitdiffbase() {
@@ -17,7 +17,7 @@ function gitdiffbase() {
     gitdiff $(git merge-base $from HEAD)
 }
 
-alias _findnovcs="find . ! \( -name .svn -prune -o -name .git -prune -o -name .hg -prune \) -a"
+alias _findnovcs="find . ! \( -name .idea -prune -o -name .svn -prune -o -name .git -prune -o -name .hg -prune \) -a"
 # sf - search within files matching given content below PWD
 alias sf="_findnovcs -type f -print0 | xargs -0 grep -IHn --color"
 
@@ -25,22 +25,23 @@ alias sf="_findnovcs -type f -print0 | xargs -0 grep -IHn --color"
 alias sfl="_findnovcs -type f"
 
 # sn - search for files matching given name below PWD
-# Needs to be a function so can be used in _multiedit
+# Needs to be a function so can be used in _findedit
 function sn() {
   _findnovcs -type f -name "$@"
 }
 
+function snw() {
+  _findnovcs -wholename "*$@*"
+}
+
 # sd - search for directories matching given name below PWD
-# Needs to be a function so can be used in _multiedit
+# Needs to be a function so can be used in _findedit
 function sd() {
   _findnovcs -type d -name "$@"
 }
 
-# snw - search for files matching given 'wholename' below PWD
-alias snw="_findnovcs -type f -wholename"
-
 # sfn - search for files matching given content below PWD; display name only
-# Needs to be a function so can be used in _multiedit
+# Needs to be a function so can be used in _findedit
 function sfn() {
   _findnovcs -type f -print0 | xargs -0 grep -Il "$@"
 }
@@ -72,17 +73,9 @@ cdn() {
   fi
 }
 
-_multiedit () {
+_findedit () {
   PATH_FIND_PROG="$1"
   shift
-
-  MY_EDITOR="$VISUAL"
-  if [[ -z "$MY_EDITOR" ]] ; then
-    MY_EDITOR="$EDITOR"
-  fi
-  if [[ -z "$MY_EDITOR" ]] ; then
-    MY_EDITOR=/usr/bin/vim
-  fi
 
   PATHS=""
   while [[ -n "$1" ]]; do
@@ -91,19 +84,45 @@ _multiedit () {
     shift
   done
 
+  _multiedit "$PATHS"
+}
+
+_multiedit () {
+  MY_EDITOR="$VISUAL"
+  if [[ -z "$MY_EDITOR" ]] ; then
+    MY_EDITOR="$EDITOR"
+  fi
+  if [[ -z "$MY_EDITOR" ]] ; then
+    MY_EDITOR=/usr/bin/vim
+  fi
+
   export MY_EDITOR
   # see http://stackoverflow.com/questions/3852616/xargs-with-command-that-open-editor-leaves-shell-in-weird-state
-  echo -e $PATHS | xargs -r sh -c '${MY_EDITOR} $@ < /dev/tty' "${MY_EDITOR}"
+  echo -e "$@" | xargs -r sh -c '${MY_EDITOR} $@ < /dev/tty' "${MY_EDITOR}"
 }
 
 # en - launch an editor to edit file(s) matching given name. Analogous to sn.
 en () {
-  _multiedit sn "$@"
+  _findedit sn "$@"
 }
 
 # efn - launch an editor to edit file(s) matching given content. Analogous to sfn.
 efn () {
- _multiedit sfn "$@"
+  _findedit sfn "$@"
+}
+ 
+# enw - launch an editor to edit file(s) matching given name. Analogous to snw.
+enw () {
+  _findedit snw "$@"
+}
+
+eng () {
+    _multiedit $(git status -s | awk '/^.M / {print $2}')
+}
+engbase () {
+    DEFAULT=master
+    from=${1-$DEFAULT}
+    _multiedit $(git diff --name-only $(git merge-base $from HEAD))
 }
 
 _sfr () {
@@ -183,6 +202,23 @@ case $OSTYPE in
         # overwrite the original name for openvt
         alias open="xdg-open"
 esac
+
+function opencopy {
+  if [[ $# != 1 ]] ; then
+      echo "should have one argument"
+      exit 1
+  fi
+  td=$(mktemp -d -t opencopy.XXXXX)
+  cp "$1" "$td"
+  pushd "$td"
+  if [[ $OSTYPE =~ linux.* ]] ; then
+      xdg-open "$td/$1"
+  else
+      open "$td/$1"
+  fi
+  popd
+  (echo "waiting..."; sleep 2; echo "deleting..." ; rm "$td/$1" && rmdir "$td"; echo $?) &
+}
 
 # 'column-number' - filter to extract the relevant column
 function cn {

@@ -7,6 +7,12 @@ set backspace=indent,eol,start
 
 " Switch syntax highlighting on
 syntax on
+set ruler
+set laststatus=2
+set matchpairs+=<:>
+
+" when searching, keep some context
+set scrolloff=4
 
 " Enable file type detection and do language-dependent indenting.
 filetype plugin indent on
@@ -35,6 +41,7 @@ set nowritebackup
 set noswapfile
 
 :nnoremap <F5> :buffers<CR>:buffer<Space>
+:nnoremap <F6> :bd<CR>
 
 set expandtab
 set tabstop=4

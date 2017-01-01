@@ -24,6 +24,7 @@
 [alias]
     outgoing = ! "git fetch && git log FETCH_HEAD..master"
     incoming = ! "git fetch && git log master..FETCH_HEAD"
+    ppull = pull --all --prune
     stat = status
     st = status
     ci = commit -a
@@ -38,13 +39,18 @@
     recent = log --oneline -5
     ls = ls-files
     root = rev-parse --show-toplevel
-    trunklog = log -m -p --first-parent
+    # show modified files
+    mod = ls-files -m
+
     # Show files ignored by git:
     ign = ls-files -o -i --exclude-standard
+    trunklog = log -m -p -M9 -C9 --pretty=fuller --first-parent
+    lastchange = log -1 -p
 [merge]
 	tool = meld
 [diff]
 	tool = meld
+	renames = copies
 [difftool]
 	prompt = false
 [mergetool]
