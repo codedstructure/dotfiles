@@ -32,14 +32,19 @@ alias sf="_findnovcs -type f -print0 | _xargs -0 grep -IHn --color"
 # sfl - list files below current PWD
 alias sfl="_findnovcs -type f"
 
-# sn - search for files matching given name below PWD
+# sn/snw - search for files matching given name below PWD
 # Needs to be a function so can be used in _findedit
-function sn() {
-  _findnovcs -type f -name "$@"
+function snw() {
+  _findnovcs -type f -wholename "*$@*"
 }
 
-function snw() {
-  _findnovcs -wholename "*$@*"
+function sn() {
+  if [[ "$@" =~ / ]] ; then
+    # if we give a (partial) path rather than filename, do a wholename search.
+    snw "$@"
+  else
+    _findnovcs -type f -name "$@"
+  fi
 }
 
 # sd - search for directories matching given name below PWD
@@ -52,6 +57,17 @@ function sd() {
 # Needs to be a function so can be used in _findedit
 function sfn() {
   _findnovcs -type f -print0 | _xargs -0 grep -Il "$@"
+}
+
+# sng - list git-modified files
+function sng () {
+    git status -s | awk '/^.M / {print $2}'
+}
+# sngbase - list git-modified-since-branch files
+function sngbase () {
+    DEFAULT=master
+    from=${1-$DEFAULT}
+    git diff --name-only $(git merge-base $from HEAD)
 }
 
 alias http_head="curl -I"
@@ -92,6 +108,7 @@ _findedit () {
     shift
   done
 
+  echo -e "$PATHS"
   _multiedit "$PATHS"
 }
 
@@ -101,7 +118,7 @@ _multiedit () {
     MY_EDITOR="$EDITOR"
   fi
   if [[ -z "$MY_EDITOR" ]] ; then
-    MY_EDITOR=/usr/bin/vim
+    MY_EDITOR=vim
   fi
 
   export MY_EDITOR
@@ -109,19 +126,24 @@ _multiedit () {
   echo -e "$@" | _xargs sh -c '${MY_EDITOR} $@ < /dev/tty' "${MY_EDITOR}"
 }
 
-# en - launch an editor to edit file(s) matching given name. Analogous to sn.
+# en/enw - launch an editor to edit file(s) matching given name.
+# Analogous to sn/snw
+enw () {
+  _findedit snw "$@"
+}
+
 en () {
-  _findedit sn "$@"
+  if [[ "$@" =~ / ]] ; then
+    enw "$@"
+  else
+    _findedit sn "$@"
+  fi
 }
 
 # efn - launch an editor to edit file(s) matching given content. Analogous to sfn.
 efn () {
+  # TODO: can't pass e.g. `-i` flag to efn, while it works fine with sfn
   _findedit sfn "$@"
-}
- 
-# enw - launch an editor to edit file(s) matching given name. Analogous to snw.
-enw () {
-  _findedit snw "$@"
 }
 
 eng () {
@@ -165,12 +187,51 @@ _sfr () {
   done
 }
 
+# sfr - search & replace leaving backup files
 sfr () {
    _sfr "$1" "$2"
 }
 
+# sfrn - search & replace without backup
 sfrn () {
-   _sfr nobackup "$1" "$2"
+   _sfr nobackup "$@"
+}
+
+# sfd - recursively delete lines matching the given regex
+_sfd () {
+  local SED_OPTS="-i~"
+  if [[ $1 == "nobackup" ]] ; then
+
+    if [[ $(uname) == 'Linux' ]] ; then
+       # GNU sed requires -i without any 'extension'
+       SED_OPTS="-i"
+    elif [[ $(uname) == 'Darwin' ]] ; then
+       # BSD sed requires an empty argument
+       SED_OPTS="-i ''"
+    fi
+
+    shift
+  fi
+  if [[ $# != 1 ]] ; then
+    echo "Usage: sfd [pattern]"
+    return 1
+  fi
+  for DELIM in / : \# \~; do
+    if ! [[ "$1" =~ ${DELIM} ]] ; then
+      break
+    fi
+  done
+  for FILE in $(_findnovcs -type f -print0 | xargs -0 grep -Il "$1") ; do
+    sed ${SED_OPTS} -e "${DELIM}$1${DELIM}d" "$FILE"
+  done
+}
+
+sfd () {
+   _sfd "$@"
+}
+
+sfdn () {
+   _sfd nobackup "$@"
 }
 
 # map - apply each of params $2..$n to the program given as $1
@@ -185,7 +246,7 @@ repeat () { count="$1"; shift; for _ in $(seq $count); do eval "$@" ; done }
 # mcd - make and change to directory
 # mcd is part of mtools by default (change MSDOS directory)
 mcd () {
-  mkdir -p $1 && cd $1
+  mkdir -p "$1" && cd "$1"
 }
 
 # sumcol - sum given column of csv input
@@ -260,17 +321,18 @@ function rmake {
 
 # tmux setup
 function ttmux {
-    if ! tmux has-session -t dev; then
-        tmux new-session -s dev -d
-        tmux split-window -h -t dev
-        tmux split-window -t dev
-        tmux split-window -t dev
-        tmux split-window -h -p 33 -t dev
+    NAME=${1:-dev}
+    if ! tmux has-session -t "${NAME}"; then
+        tmux new-session -s "${NAME}" -d
+        tmux split-window -h -t "${NAME}"
+        tmux split-window -t "${NAME}"
+        tmux split-window -t "${NAME}"
+        tmux split-window -h -p 33 -t "${NAME}"
         tmux clock-mode
-        tmux new-window -t dev
-        tmux select-window -t dev:1
+        tmux new-window -t "${NAME}"
+        tmux select-window -t "${NAME}":1
     fi
-    tmux attach -t dev
+    tmux attach -t "${NAME}"
 }
 
 function mkblank {

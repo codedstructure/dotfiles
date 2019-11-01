@@ -4,6 +4,6 @@ ssh = ssh -C
 
 [extensions]
 convert =
-hgsubversion =
 highlight =
 hgk =
+churn =
