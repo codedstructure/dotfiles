@@ -137,16 +137,25 @@ function! Softwrap()
   set wrap
   set nolist
   "set breakat=\ |@-+;:,./?^I
-  nnoremap j gj
-  nnoremap <Down> gj
-  nnoremap k gk
-  nnoremap <Up> gk
-  inoremap <Down> <C-o>gj
-  inoremap <Up> <C-o>gk
-  vnoremap j gj
-  vnoremap <Down> gj
-  vnoremap k gk
-  vnoremap <Up> gk
+
+  inoremap <expr> <Down> v:count == 0 ? '<C-o>gj' : 'j'
+  inoremap <expr> <Up> v:count == 0 ? '<C-o>gk' : 'k'
+  nnoremap <expr> j v:count == 0 ? 'gj' : 'j'
+  nnoremap <expr> k v:count == 0 ? 'gk' : 'k'
+  nnoremap <expr> <Down> v:count == 0 ? 'gj' : 'j'
+  nnoremap <expr> <Up> v:count == 0 ? 'gk' : 'k'
+  vnoremap <expr> j v:count == 0 ? 'gj' : 'j'
+  vnoremap <expr> k v:count == 0 ? 'gk' : 'k'
+  vnoremap <expr> <Down> v:count == 0 ? 'gj' : 'j'
+  vnoremap <expr> <Up> v:count == 0 ? 'gk' : 'k'
+
+  nnoremap 0 g0
+  nnoremap $ g$
+  vnoremap 0 g0
+  vnoremap $ g$
+  inoremap <Home> <C-o>g0
+  inoremap <End> <C-o>g$
+
   set foldcolumn=7
   set nonumber
   set colorcolumn=0
@@ -154,7 +163,6 @@ function! Softwrap()
   set wrapmargin=0
 endfunction
 
-"au BufRead,BufNewFile *.txt,*.md,*.markdown,*.rst set wrap linebreak nolist textwidth=0 wrapmargin=0 colorcolumn=0
 au BufRead,BufNewFile *.txt,*.md,*.markdown,*.rst,*.otl call Softwrap()
 
 nnoremap <silent> <F12> :TlistUpdate<CR>:TlistToggle<CR>

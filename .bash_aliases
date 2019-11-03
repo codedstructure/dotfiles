@@ -1,3 +1,4 @@
+alias python=python3
 alias svnrev="svn info ${SVN_ROOT} | awk '/Revision:/ {print $2}'"
 alias svndiff="svn diff --diff-cmd svnmeld | filterdiff --clean"
 alias svnlog="svn up; svn log --stop-on-copy"
