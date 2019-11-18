@@ -340,6 +340,34 @@ function mkblank {
     dd if=/dev/zero of=blank.dd count=$1 bs=1M
 }
 
+function tmux_tty_command {
+    # Use for demo captures, e.g. with `peek`
+    delay=0.1
+    echo -ne "$@" | sed -e 's/\(.\)/\1\n/g' | while IFS="" read c ; do
+        sleep $delay
+        if [[ "$c" == $(echo -e "\n") ]] ; then
+            delay=0.4
+            tmux send-keys Enter
+            continue
+        elif [[ "$c" == " " ]] ; then
+            delay=0.3
+        elif [[ "$c" == $(echo -e "\a") ]] ; then
+            # '\a' injects a 0.5s delay
+            delay=0.5
+            continue
+        else
+            if [[ $(($RANDOM % 2)) == 0 ]] ; then
+                delay=0.1
+            else
+                delay=0.2
+            fi
+        fi
+        tmux send-keys "$c"
+    done
+    sleep 0.4
+    tmux send-keys Enter
+}
+
 if [[ -e ${HOME}/.bash_aliases_work ]] ; then
     . ${HOME}/.bash_aliases_work
 fi
