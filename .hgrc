@@ -1,9 +1,0 @@
-[ui]
-username = Ben Bass <benbass@codedstructure.net>
-ssh = ssh -C
-
-[extensions]
-convert =
-highlight =
-hgk =
-churn =

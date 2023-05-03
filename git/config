@@ -22,8 +22,8 @@
     changed = green
     untracked = cyan
 [alias]
-    outgoing = ! "git fetch && git log FETCH_HEAD..master"
-    incoming = ! "git fetch && git log master..FETCH_HEAD"
+    outgoing = ! "git fetch && git log FETCH_HEAD..main"
+    incoming = ! "git fetch && git log main..FETCH_HEAD"
     ppull = pull --all --prune
     stat = status
     st = status
@@ -47,11 +47,13 @@
     trunklog = log -m -p -M9 -C9 --pretty=fuller --first-parent
     lastchange = log -1 -p
 [merge]
-	tool = meld
+    tool = meld
 [diff]
-	tool = meld
-	renames = copies
+    tool = meld
+    renames = copies
 [difftool]
-	prompt = false
+    prompt = false
 [mergetool]
-	prompt = false
+    prompt = false
+[pull]
+    ff = only
