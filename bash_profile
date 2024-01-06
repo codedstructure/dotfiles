@@ -19,7 +19,7 @@ fi
 
 # Set prompt
 GIT_COLOUR="0;33m"
-HOST_COLOUR="0;32m"
+HOST_COLOUR="1;34m"
 function colour_set { echo "\[\e[$1\]"; }
 function colour_reset { colour_set "m"; }
 
