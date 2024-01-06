@@ -19,7 +19,9 @@ Plugin 'preservim/nerdtree'
 Plugin 'rust-lang/rust.vim'
 Plugin 'vimoutliner/vimoutliner'
 Plugin 'airblade/vim-gitgutter'
-Plugin 'altercation/vim-colors-solarized'
+"Plugin 'altercation/vim-colors-solarized'
+"Plugin 'lifepillar/vim-solarized8'
+Plugin 'ericbn/vim-solarized'
 
 call vundle#end()
 filetype plugin indent on
@@ -131,12 +133,10 @@ nnoremap <F11> zM
 set foldlevelstart=20
 
 "solarized support
-" first disable CSApprox
-let g:CSApprox_loaded = 1
 set background=dark
-"let g:solarized_termcolors=16
-colorscheme solarized
 :nnoremap <F5> :let &background = ( &background == "dark"? "light" : "dark" )<CR>
+colorscheme solarized
+" Note: if using solarized8, need to `set t_Co=16`
 
 set display=lastline
 
