@@ -2,6 +2,30 @@
 " This must be first, because it changes other options as a side effect.
 set nocompatible
 
+""" Set of Vundle config
+
+" This uses Vundle to manage plugins.
+" git clone https://github.com/VundleVim/Vundle.vim.git ~/.vim/bundle/Vundle.vim
+filetype off " required for vundle
+" set the runtime path to include Vundle and initialize
+set rtp+=~/.vim/bundle/Vundle.vim
+call vundle#begin()
+" let Vundle manage Vundle, required
+Plugin 'VundleVim/Vundle.vim'
+
+" plugins to include. run `vim +PluginInstall` after updating this.
+Plugin 'ap/vim-buftabline'
+Plugin 'preservim/nerdtree'
+Plugin 'rust-lang/rust.vim'
+Plugin 'vimoutliner/vimoutliner'
+Plugin 'airblade/vim-gitgutter'
+Plugin 'altercation/vim-colors-solarized'
+
+call vundle#end()
+filetype plugin indent on
+
+""" End of Vundle config
+
 " disable beep
 set noerrorbells visualbell t_vb=
 autocmd GUIEnter * set visualbell t_vb=
@@ -105,10 +129,6 @@ vnoremap <F9> zf
 nnoremap <F10> zR
 nnoremap <F11> zM
 set foldlevelstart=20
-
-"Pathogen
-call pathogen#infect()
-call pathogen#helptags()
 
 "solarized support
 " first disable CSApprox
