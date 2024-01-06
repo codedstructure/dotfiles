@@ -1,42 +1,30 @@
-alias python=python3
-alias svnrev="svn info ${SVN_ROOT} | awk '/Revision:/ {print $2}'"
-alias svndiff="svn diff --diff-cmd svnmeld | filterdiff --clean"
-alias svnlog="svn up; svn log --stop-on-copy"
-alias svnlogdiff="svndiff -r \$(svn log --stop-on-copy --xml | xpath -q -e '//log/logentry[last()]/@revision' | cut -d '\"' -f 2):HEAD"
-alias svnlogdifft="svn diff -r \$(svn log --stop-on-copy --xml | xpath -q -e '//log/logentry[last()]/@revision' | cut -d '\"' -f 2):HEAD"
-alias svnlogstat="svn diff -r \$(svn log --stop-on-copy --xml | xpath -q -e '//log/logentry[last()]/@revision' | cut -d '\"' -f 2):HEAD --summarize"
-alias branchdiff="svn diff -r \$(svn log --stop-on-copy --xml | xpath -q -e '//log/logentry[last()]/@revision' | cut -d '\"' -f 2):HEAD | filterdiff --clean"
-alias gitdiff="git difftool -d"
-alias gitdiffsumm="git diff --summary \$(git merge-base master HEAD)"
-alias gum="(git checkout master ; git pull --all --prune ; git checkout -)"
-alias webserve="python -m SimpleHTTPServer"
+####
+#### Initialisation
+####
 
-# gitdiffbase - show changes since most likely 'branch point'
-function gitdiffbase() {
-    DEFAULT=master
-    from=${1-$DEFAULT}
-    gitdiff $(git merge-base $from HEAD)
-}
+# Make GNU xargs behave like BSD xargs - only run the command if there are some files
+# to run it against. Note recent MacOS supports the arg as a no-op for compatibility.
+alias _xargs="xargs -r"
 
-if [[ $(uname -s) == "Darwin" ]] ; then
-    # on Darwin (OS X) xargs always behaves as GNU xargs '-r' argument,
-    # and doesn't support the -r flag.
-    alias _xargs=xargs
-else
-    alias _xargs="xargs -r"
+# Many of these aliases require rg to be installed; print warning if not found.
+if ! command -v rg > /dev/null ; then
+  echo "BASH ALIASES: rg not found!" >&2
 fi
 
-alias _findnovcs="find . ! \( -name .idea -prune -o -name .svn -prune -o -name .git -prune -o -name .hg -prune \) -a"
-# sf - search within files matching given content below PWD
-alias sf="_findnovcs -type f -print0 | _xargs -0 grep -IHn --color"
+####
+#### 'find and edit' aliases and functions
+####
 
-# sfl - list files below current PWD
-alias sfl="_findnovcs -type f"
+# sfl - list non-VCS files below current point
+alias sfl="rg --hidden -g '!.git/' --files"
+
+# sf - search within files matching given content below PWD
+alias sf="rg --hidden -g '!.git/'"
 
 # sn/snw - search for files matching given name below PWD
 # Needs to be a function so can be used in _findedit
 function snw() {
-  _findnovcs -type f -wholename "*$@*"
+  sfl | grep "$@"
 }
 
 function sn() {
@@ -44,43 +32,20 @@ function sn() {
     # if we give a (partial) path rather than filename, do a wholename search.
     snw "$@"
   else
-    _findnovcs -type f -name "$@"
+    sfl | grep -E "^$@\$|/$@$"
   fi
 }
 
 # sd - search for directories matching given name below PWD
 # Needs to be a function so can be used in _findedit
 function sd() {
-  _findnovcs -type d -name "$@"
+  sfl -0 | _xargs -0 dirname | sort -u | grep "$@"
 }
 
 # sfn - search for files matching given content below PWD; display name only
 # Needs to be a function so can be used in _findedit
 function sfn() {
-  _findnovcs -type f -print0 | _xargs -0 grep -Il "$@"
-}
-
-# sng - list git-modified files
-function sng () {
-    git status -s | awk '/^.M / {print $2}'
-}
-# sngbase - list git-modified-since-branch files
-function sngbase () {
-    DEFAULT=master
-    from=${1-$DEFAULT}
-    git diff --name-only $(git merge-base $from HEAD)
-}
-
-alias http_head="curl -I"
-alias cdtemp='td=$(mktemp -d -t cdtemp.XXXXX); pushd $td; bash -c "trap \"rm -rf ${td}\" EXIT; bash"; popd;'
-
-alias pp="egrep '^\s*(def|class) '"
-
-alias zen="python -c 'import this'"
-
-# Output all symbolic links below this point
-rlinks() {
-  find -type l -print0 -exec bash -c 'echo " -> $(readlink {})"' \; | tr '\0' ' '
+  sf -l "$@"
 }
 
 cdn() {
@@ -88,7 +53,7 @@ cdn() {
   if [[ -z ${TARGET} ]] ; then
     return
   fi
-  local TARGET_FILE=$(_findnovcs -type f -name "${TARGET}" | head -n 1)
+  local TARGET_FILE=$(sn "${TARGET}" | head -n 1)
   if [[ -f ${TARGET_FILE} ]] ; then
     local TARGET_DIR=$(dirname ${TARGET_FILE})
     if [[ -d "${TARGET_DIR}" ]] ; then
@@ -147,14 +112,38 @@ efn () {
   _findedit sfn "$@"
 }
 
+
+####
+#### git related aliases and functions
+####
+
+alias gum="(git checkout master ; git pull --all --prune ; git checkout -)"
+# sng - list git-modified files
+function sng () {
+    git status -s | awk '/^.M / {print $2}'
+}
+# sngbase - list git-modified-since-branch files
+function sngbase () {
+    DEFAULT=main
+    from=${1-$DEFAULT}
+    git diff --name-only $(git merge-base $from HEAD)
+}
+
+# edit git-modified files
 eng () {
     _multiedit $(git status -s | awk '/^.M / {print $2}')
 }
+
+# edit git files modified since branching
 engbase () {
-    DEFAULT=master
+    DEFAULT=main
     from=${1-$DEFAULT}
     _multiedit $(git diff --name-only $(git merge-base $from HEAD))
 }
+
+####
+#### Search & replace across files
+####
 
 _sfr () {
   local SED_OPTS="-i~"
@@ -183,7 +172,7 @@ _sfr () {
      echo "Old string contains delimiters"
      return 1
   fi
-  for FILE in $(_findnovcs -type f -print0 | _xargs -0 grep -Il "$1") ; do
+  for FILE in $(sfl -0 | _xargs -0 grep -Il "$1") ; do
     sed ${SED_OPTS} -e "s${DELIM}$1${DELIM}$2${DELIM}g" "$FILE"
   done
 }
@@ -222,7 +211,7 @@ _sfd () {
       break
     fi
   done
-  for FILE in $(_findnovcs -type f -print0 | xargs -0 grep -Il "$1") ; do
+  for FILE in $(sfl -0 | _xargs -0 grep -Il "$1") ; do
     sed ${SED_OPTS} -e "${DELIM}$1${DELIM}d" "$FILE"
   done
 }
@@ -235,6 +224,10 @@ sfdn () {
    _sfd nobackup "$@"
 }
 
+####
+#### Various functional aliases
+####
+
 # map - apply each of params $2..$n to the program given as $1
 # Example usage: 'map open file1.txt file2.txt file3.txt'
 map () { prog="$1"; shift; for arg in "$@"; do eval "$prog" '"$arg"'; done }
@@ -243,6 +236,18 @@ map () { prog="$1"; shift; for arg in "$@"; do eval "$prog" '"$arg"'; done }
 fold () { prog="$1"; shift; while true; do [[ -z "$2" ]] && break; eval "$prog" '"$1"' '"$2"'; shift; done }
 # Do the specified actions $1 times sequentially
 repeat () { count="$1"; shift; for _ in $(seq $count); do eval "$@" ; done }
+
+####
+#### Miscellaneous
+####
+
+alias http_head="curl -I"
+alias cdtemp='td=$(mktemp -d -t cdtemp.XXXXX); pushd $td; bash -c "trap \"rm -rf ${td}\" EXIT; bash"; popd;'
+
+# Output all symbolic links below this point
+rlinks() {
+  find -type l -print0 -exec bash -c 'echo " -> $(readlink {})"' \; | tr '\0' ' '
+}
 
 # mcd - make and change to directory
 # mcd is part of mtools by default (change MSDOS directory)
@@ -261,8 +266,6 @@ sl () {
 }
 
 if [[ $(uname) = 'Darwin' ]] ; then
-    alias gvim=mvim
-    alias vim='mvim -v'
     alias aplay="sox -r 8000 -b 8 -c 1 -t raw -e unsigned-integer - -d"
 
     ia() {
@@ -320,6 +323,10 @@ function rmake {
   popd > /dev/null
 }
 
+function mkblank {
+    dd if=/dev/zero of=blank.dd count=$1 bs=1M
+}
+
 # tmux setup
 function ttmux {
     NAME=${1:-dev}
@@ -334,10 +341,6 @@ function ttmux {
         tmux select-window -t "${NAME}":1
     fi
     tmux attach -t "${NAME}"
-}
-
-function mkblank {
-    dd if=/dev/zero of=blank.dd count=$1 bs=1M
 }
 
 function tmux_tty_command {
@@ -367,6 +370,10 @@ function tmux_tty_command {
     sleep 0.4
     tmux send-keys Enter
 }
+
+####
+#### Delegate to other files...
+####
 
 if [[ -e ${HOME}/.bash_aliases_work ]] ; then
     . ${HOME}/.bash_aliases_work
