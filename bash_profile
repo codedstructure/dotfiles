@@ -1,6 +1,10 @@
 # .bash_profile
 # @codedstructure
 
+# Configure path
+export PATH="$PATH:$HOME/bin:$HOME:/.local/bin"
+export CDPATH="$CDPATH:$HOME/projects/codedstructure"
+
 # Homebrew config (Mac)
 if command -v brew >/dev/null ; then
   # Set PATH, MANPATH, etc., for Homebrew.
@@ -27,8 +31,9 @@ export GIT_PS1_SHOWDIRTYSTATE='TRUE'
 BASE_PS1="$(colour_set $HOST_COLOUR)\u@\h$(colour_reset):\w\$ "
 export PS1="$(colour_set $GIT_COLOUR)"'$(__git_ps1 "%s ")'"$(colour_set $COLOUR)${BASE_PS1}$(colour_reset)"
 
-# Configure path
-export PATH="$PATH:$HOME/bin:$HOME:/.local/bin"
+# Bash options
+shopt -s globstar  # example: 'vim src/**/thing'
+shopt -s dotglob  # example: 'echo ~/*' will include .vimrc
 
 # Delegate to other files
 if [[ -r "${HOME}/.bash_aliases" ]]; then
