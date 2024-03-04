@@ -11,6 +11,13 @@ if ! command -v rg > /dev/null ; then
   echo "BASH ALIASES: rg not found!" >&2
 fi
 
+if ! command -v watchexec > /dev/null ; then
+  # brew install watchexec
+  # apt install watchexec
+  # cargo (b)install watchexec-cli
+  echo "BASH ALIASES: watchexec not found!" >&2
+fi
+
 ####
 #### 'find and edit' aliases and functions
 ####
@@ -61,6 +68,12 @@ cdn() {
       cd ${TARGET_DIR}
     fi
   fi
+}
+
+onchange() {
+  CF=$1
+  shift
+  watchexec -w "$CF" -- "$@"
 }
 
 _findedit () {
@@ -117,7 +130,7 @@ efn () {
 #### git related aliases and functions
 ####
 
-alias gum="(git checkout master ; git pull --all --prune ; git checkout -)"
+alias gum="(git checkout main || git checkout master ; git pull --all --prune ; git checkout -)"
 # sng - list git-modified files
 function sng () {
     git status -s | awk '/^.M / {print $2}'
