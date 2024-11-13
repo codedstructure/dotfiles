@@ -42,24 +42,15 @@ set laststatus=2
 set matchpairs+=<:>
 set updatetime=250
 
+set timeout timeoutlen=1500 ttimeoutlen=100
+
 " when searching, keep some context
 set scrolloff=4
 
 " Enable file type detection and do language-dependent indenting.
 filetype plugin indent on
 
-" from http://ianrolfe.livejournal.com/39474.html
-" For some reason home and end keys are not mapping properly
-" Home key
-imap <esc>OH <esc>0i
-cmap <esc>OH <home>
-nmap <esc>OH 0
-" End key
-nmap <esc>OF $
-imap <esc>OF <esc>$a
-cmap <esc>OF <end>
-
-inoremap jj <Esc>
+inoremap <nowait> jj <Esc>
 
 set gfn=Monospace\ 8
 "set t_Co=256
@@ -75,9 +66,9 @@ set noswapfile
 :nnoremap <F6> :bd<CR>
 
 set expandtab
-set tabstop=4
+set tabstop=8
 set shiftwidth=4
-set colorcolumn=79
+"set colorcolumn=79
 :map <C-Up> :bn<Return>
 :map <C-Down> :bp<Return>
 filetype plugin indent on
@@ -94,7 +85,7 @@ set complete-=i
 :nnoremap <S-Tab> :bprevious<CR>
 :map <End> <End>
 :map <Home> <Home>
-set list listchars=trail:_
+set list listchars=tab:\ \ ,trail:_
 highlight SpecialKey ctermfg=DarkGray ctermbg=yellow
 set hidden
 set backspace=2
@@ -109,12 +100,12 @@ set number
 set numberwidth=4
 
 " Informative status line
-set statusline=%F%m%r%h%w\ [TYPE=%Y\ %{&ff}]\ [%l/%L\ (%p%%)]
+set statusline=%F%m%r%h%w\ [TYPE=%Y\ %{&ff}]\ [%l:%c/%L\ (%p%%)]
 
 " various post-write hooks for quality checking
 "au BufWritePost *.py !flake8 --ignore=E501,E121,E122,E123,E124,E125,E126,E127,E128 --max-complexity=10 %
 autocmd BufWritePost *.xml,*.html !xmlwf % | grep -v 'undefined entity'
-autocmd BufWritePost *.py call Flake8()
+autocmd BufWritePost *.py !ruff check %
 au BufWritePost *.js !jshint %
 au BufWritePost *.json !python3 -m json.tool % /dev/null
 
